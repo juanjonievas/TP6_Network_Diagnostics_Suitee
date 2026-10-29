@@ -1,0 +1,14 @@
+{
+  "name": "network-diagnostics-backend-stub",
+  "version": "1.0.0",
+  "description": "Backend Stub de Sincronización y Persistencia para Network Diagnostics Suite",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

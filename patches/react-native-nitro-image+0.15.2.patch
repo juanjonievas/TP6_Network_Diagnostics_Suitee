@@ -1,0 +1,17 @@
+diff --git a/node_modules/react-native-nitro-image/android/CMakeLists.txt b/node_modules/react-native-nitro-image/android/CMakeLists.txt
+index 7ead9fd..58af3e7 100644
+--- a/node_modules/react-native-nitro-image/android/CMakeLists.txt
++++ b/node_modules/react-native-nitro-image/android/CMakeLists.txt
+@@ -23,6 +23,12 @@ endif()
+ include(${CMAKE_SOURCE_DIR}/../nitrogen/generated/android/NitroImage+autolinking.cmake)
+ 
+ # Set up local includes
++if(DEFINED REACT_COMMON_DIR)
++        include_directories(BEFORE "${REACT_COMMON_DIR}")
++else()
++        include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../node_modules/react-native/ReactCommon")
++endif()
++
+ include_directories(
+         "src/main/cpp"
+         "../cpp"

@@ -1,0 +1,61 @@
+diff --git a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PhotoContainerFormat+fromImageFormat.kt b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PhotoContainerFormat+fromImageFormat.kt
+--- a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PhotoContainerFormat+fromImageFormat.kt
++++ b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PhotoContainerFormat+fromImageFormat.kt
+@@ -7,7 +7,7 @@
+ fun PhotoContainerFormat.Companion.fromImageFormat(imageFormat: Int): PhotoContainerFormat {
+   return when {
+     // HEIC
+-    imageFormat == ImageFormat.HEIC || imageFormat == ImageFormat.HEIC_ULTRAHDR -> PhotoContainerFormat.HEIC
++    imageFormat == ImageFormat.HEIC -> PhotoContainerFormat.HEIC
+     // DNG/RAW
+     ImageFormatUtils.isRawFormat(imageFormat) -> PhotoContainerFormat.DNG
+     // JPEG
+diff --git a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PixelFormat+fromImageFormat.kt b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PixelFormat+fromImageFormat.kt
+--- a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PixelFormat+fromImageFormat.kt
++++ b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/extensions/converters/PixelFormat+fromImageFormat.kt
+@@ -43,12 +43,6 @@
+         else -> PixelFormat.YUV_420_10_BIT_FULL
+       }
+     }
+-    ImageFormat.YCBCR_P210 -> {
+-      when (range) {
+-        PixelRange.VIDEO -> PixelFormat.YUV_422_10_BIT_VIDEO
+-        else -> PixelFormat.YUV_422_10_BIT_FULL
+-      }
+-    }
+     ImageFormat.PRIVATE -> PixelFormat.PRIVATE
+     else -> PixelFormat.UNKNOWN
+   }
+diff --git a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/hybrids/orientation/HybridDeviceOrientationManager.kt b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/hybrids/orientation/HybridDeviceOrientationManager.kt
+--- a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/hybrids/orientation/HybridDeviceOrientationManager.kt
++++ b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/hybrids/orientation/HybridDeviceOrientationManager.kt
+@@ -25,4 +25,5 @@
+       val activity = context.currentActivity
+-      if (activity != null) {
+-        val surfaceRotation = activity.display.rotation
++      val display = activity?.display
++      if (display != null) {
++        val surfaceRotation = display.rotation
+         currentOrientation = CameraOrientation.fromSurfaceRotation(surfaceRotation)
+diff --git a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/utils/ImageFormatUtils.kt b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/utils/ImageFormatUtils.kt
+--- a/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/utils/ImageFormatUtils.kt
++++ b/node_modules/react-native-vision-camera/android/src/main/java/com/margelo/nitro/camera/utils/ImageFormatUtils.kt
+@@ -11,7 +11,6 @@
+       ImageFormat.YUV_422_888,
+       ImageFormat.YUV_444_888,
+       ImageFormat.YCBCR_P010,
+-      ImageFormat.YCBCR_P210,
+       // RGB
+       ImageFormat.FLEX_RGB_888,
+       ImageFormat.FLEX_RGBA_8888,
+@@ -36,10 +35,8 @@
+       ImageFormat.DEPTH_JPEG,
+       ImageFormat.RAW_SENSOR,
+       ImageFormat.HEIC,
+-      ImageFormat.HEIC_ULTRAHDR,
+     )
+   private val allPhotoHdrFormats =
+     arrayOf(
+-      ImageFormat.HEIC_ULTRAHDR,
+       ImageFormat.JPEG_R,
+     )

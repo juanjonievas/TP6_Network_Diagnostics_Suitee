@@ -1,0 +1,110 @@
+name: Build Android APK (Cloud CI/CD)
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  validate_and_build:
+    name: Test & Build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36 platforms;android-35 build-tools;35.0.0 cmake;3.22.1 ndk;26.1.10909125'
+
+      - name: Accept Android Licenses
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-36" || true
+
+      - name: Install Node Dependencies
+        run: |
+          npm install --legacy-peer-deps
+          npx patch-package
+          npm ci --prefix backend
+          find node_modules -name "graphicsConversions.h" | while read -r f; do sed -i 's/std::format("{}%", dimension.value)/std::to_string(dimension.value) + "%"/g' "$f"; done
+
+      - name: Run Automated Tests
+        run: npm run test
+
+      - name: Run TypeScript Type Check
+        run: npm run type-check
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android Debug APK
+        run: |
+          set -o pipefail
+          find ~/.gradle -name "graphicsConversions.h" 2>/dev/null | while read -r f; do sed -i 's/std::format("{}%", dimension.value)/std::to_string(dimension.value) + "%"/g' "$f"; done || true
+          cd android
+          ./gradlew clean assembleDebug --no-daemon --stacktrace 2>&1 | tee ../gradle-build.log
+
+      - name: Inspect Outputs and Diagnostic Logs
+        if: always()
+        run: |
+          echo "### 📦 Android Build Outputs:" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          find android/app/build/outputs/ -type f || echo "No files found in android/app/build/outputs/"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Gradle Build Log (Last 200 lines):" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 200 gradle-build.log || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetworkDiagnosticsSuite-debug-apk
+          path: android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build Summary
+        run: |
+          echo "### 🚀 Build Completed Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "La APK de depuración ha sido generada por GitHub Actions en la nube." >> $GITHUB_STEP_SUMMARY
+          echo "- **Archivo:** \`app-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ubicación de descarga:** Pestaña *Artifacts* de esta ejecución." >> $GITHUB_STEP_SUMMARY
+          echo "- **Instalación:** Descargar en el celular y presionar sobre el archivo o ejecutar \`adb install app-debug.apk\`" >> $GITHUB_STEP_SUMMARY

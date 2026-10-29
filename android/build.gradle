@@ -1,0 +1,56 @@
+buildscript {
+    ext {
+        buildToolsVersion = "35.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 34
+        ndkVersion = "26.1.10909125"
+        kotlinVersion = "1.9.24"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
+
+    tasks.configureEach { task ->
+        if (task.name.contains("CMake") || task.name.contains("externalNativeBuild") || task.name.contains("generateJsonModel")) {
+            task.doFirst {
+                fileTree(rootProject.rootDir).matching {
+                    include "**/graphicsConversions.h"
+                }.each { f ->
+                    def txt = f.text
+                    if (txt.contains('std::format("{}%", dimension.value)')) {
+                        println "Patching graphicsConversions.h in project: ${f}"
+                        f.text = txt.replace('std::format("{}%", dimension.value)', 'std::to_string(dimension.value) + "%"')
+                    }
+                }
+                def gradleHome = project.gradle.gradleUserHomeDir
+                if (gradleHome && gradleHome.exists()) {
+                    fileTree(gradleHome).matching {
+                        include "**/graphicsConversions.h"
+                    }.each { f ->
+                        def txt = f.text
+                        if (txt.contains('std::format("{}%", dimension.value)')) {
+                            println "Patching graphicsConversions.h in Gradle cache: ${f}"
+                            f.text = txt.replace('std::format("{}%", dimension.value)', 'std::to_string(dimension.value) + "%"')
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,76 @@
+diff --git a/node_modules/react-native-ssh-sftp/android/build.gradle b/node_modules/react-native-ssh-sftp/android/build.gradle
+index cd4d6cd..cbc40b9 100644
+--- a/node_modules/react-native-ssh-sftp/android/build.gradle
++++ b/node_modules/react-native-ssh-sftp/android/build.gradle
+@@ -1,23 +1,17 @@
+-
+-buildscript {
+-    repositories {
+-        jcenter()
+-    }
+-
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:1.3.1'
+-    }
++def safeExtGet(prop, fallback) {
++    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+ }
+ 
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    compileSdkVersion 23
+-    buildToolsVersion "23.0.1"
++    namespace 'com.reactlibrary'
++    compileSdkVersion safeExtGet('compileSdkVersion', 34)
++    buildToolsVersion safeExtGet('buildToolsVersion', '34.0.0')
+ 
+     defaultConfig {
+-        minSdkVersion 16
+-        targetSdkVersion 22
++        minSdkVersion safeExtGet('minSdkVersion', 24)
++        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+         versionCode 1
+         versionName "1.0"
+     }
+@@ -28,12 +22,13 @@ android {
+ 
+ repositories {
+     mavenCentral()
++    google()
+ }
+ 
+ dependencies {
+-    compile 'com.facebook.react:react-native:+'
+-    compile 'com.jcraft:jsch:0.1.54'
+-    compile 'com.fasterxml.jackson.core:jackson-core:2.9.0'
+-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0'
++    implementation 'com.facebook.react:react-android'
++    implementation 'com.jcraft:jsch:0.1.55'
++    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
++    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
++    implementation 'androidx.annotation:annotation:1.7.1'
+ }
+-  
+\ No newline at end of file
+diff --git a/node_modules/react-native-ssh-sftp/android/src/main/java/com/reactlibrary/RNSshClientModule.java b/node_modules/react-native-ssh-sftp/android/src/main/java/com/reactlibrary/RNSshClientModule.java
+index a8d97ac..2a02357 100644
+--- a/node_modules/react-native-ssh-sftp/android/src/main/java/com/reactlibrary/RNSshClientModule.java
++++ b/node_modules/react-native-ssh-sftp/android/src/main/java/com/reactlibrary/RNSshClientModule.java
+@@ -2,7 +2,7 @@ package com.reactlibrary;
+ 
+ import android.os.Environment;
+ import android.util.Log;
+-import android.support.annotation.Nullable;
++import androidx.annotation.Nullable;
+ 
+ import com.facebook.react.bridge.Arguments;
+ import com.facebook.react.bridge.Callback;
+@@ -39,7 +39,6 @@ import java.util.Map;
+ import java.util.Properties;
+ import java.util.Vector;
+ 
+-import okhttp3.internal.Util;
+ 
+ public class RNSshClientModule extends ReactContextBaseJavaModule {
+   private class SSHClient {
